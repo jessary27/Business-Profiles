@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glean Technologies — Client Intelligence Brief</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232636;
+    --border: #2e3348;
+    --accent: #6c7de8;
+    --accent2: #9b8eff;
+    --accent3: #5de0c7;
+    --text: #e4e6f0;
+    --muted: #8b90a8;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --green: #4ade80;
+    --warn: #fb923c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.65; }
+
+  /* Sidebar nav */
+  .sidebar {
+    position: fixed; top: 0; left: 0; width: 260px; height: 100vh;
+    background: var(--surface); border-right: 1px solid var(--border);
+    overflow-y: auto; padding: 24px 0; z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar-logo .logo-text { font-size: 17px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; }
+  .sidebar-logo .logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .nav-section { padding: 4px 20px 2px; font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase; margin-top: 12px; }
+  .nav-item { display: block; padding: 7px 20px; font-size: 13px; color: var(--muted); text-decoration: none; border-left: 3px solid transparent; transition: all 0.15s; }
+  .nav-item:hover, .nav-item.active { color: var(--text); background: rgba(108,125,232,0.08); border-left-color: var(--accent); }
+
+  /* Main content */
+  .main { margin-left: 260px; padding: 48px 56px 80px; max-width: 1180px; }
+
+  /* Header */
+  .report-header {
+    background: linear-gradient(135deg, #1a1d27 0%, #232636 100%);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 40px 48px;
+    margin-bottom: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .report-header::before {
+    content: '';
+    position: absolute; top: -60px; right: -60px;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(108,125,232,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .report-header .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; background: rgba(108,125,232,0.2); color: var(--accent); border: 1px solid rgba(108,125,232,0.35); margin-bottom: 16px; }
+  .report-header h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.8px; color: #fff; line-height: 1.2; }
+  .report-header .subtitle { font-size: 16px; color: var(--muted); margin-top: 10px; }
+  .report-meta { display: flex; gap: 24px; margin-top: 24px; flex-wrap: wrap; }
+  .meta-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .meta-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); }
+
+  /* Section headers */
+  .domain-header {
+    display: flex; align-items: center; gap: 14px;
+    margin: 56px 0 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .domain-num {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: rgba(108,125,232,0.2); border: 1px solid rgba(108,125,232,0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--accent);
+    flex-shrink: 0;
+  }
+  .domain-header h2 { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.4px; }
+  .domain-header .domain-tag { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  h3 { font-size: 16px; font-weight: 700; color: var(--text); margin: 28px 0 12px; }
+  h4 { font-size: 14px; font-weight: 600; color: var(--accent2); margin: 20px 0 8px; }
+  p { margin-bottom: 14px; color: var(--text); }
+
+  /* Executive brief callout */
+  .exec-brief {
+    background: linear-gradient(135deg, rgba(93,224,199,0.06), rgba(108,125,232,0.06));
+    border: 1px solid rgba(93,224,199,0.25);
+    border-radius: 12px;
+    padding: 32px 36px;
+    margin-bottom: 40px;
+  }
+  .exec-brief h2 { font-size: 20px; font-weight: 700; color: var(--accent3); margin-bottom: 16px; }
+  .exec-brief .glance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .glance-item { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .glance-item .label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .glance-item .value { font-size: 15px; font-weight: 600; color: var(--text); }
+
+  /* Key takeaway cards */
+  .takeaway-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+  .takeaway { display: flex; gap: 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .takeaway-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .takeaway-text { font-size: 14px; color: var(--text); }
+  .takeaway-text strong { color: var(--accent2); }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 16px 0 24px; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead tr { background: var(--surface2); }
+  thead th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.7px; border-bottom: 1px solid var(--border); }
+  tbody tr { border-bottom: 1px solid rgba(46,51,72,0.6); transition: background 0.1s; }
+  tbody tr:hover { background: rgba(108,125,232,0.05); }
+  tbody tr:last-child { border-bottom: none; }
+  td { padding: 11px 16px; vertical-align: top; color: var(--text); }
+  td strong { color: var(--accent2); }
+  td .pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .pill-green { background: rgba(74,222,128,0.15); color: var(--green); }
+  .pill-yellow { background: rgba(251,191,36,0.15); color: var(--yellow); }
+  .pill-red { background: rgba(248,113,113,0.15); color: var(--red); }
+
+  /* Status indicators */
+  .status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; }
+  .status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .status-green::before { background: var(--green); }
+  .status-yellow::before { background: var(--yellow); }
+  .status-red::before { background: var(--red); }
+  .status-green { color: var(--green); }
+  .status-yellow { color: var(--yellow); }
+  .status-red { color: var(--red); }
+
+  /* SWOT grid */
+  .swot { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0 24px; }
+  .swot-card { background: var(--surface2); border-radius: 10px; padding: 20px; border: 1px solid var(--border); }
+  .swot-card h4 { margin: 0 0 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; }
+  .swot-card.s h4 { color: #4ade80; }
+  .swot-card.w h4 { color: #f87171; }
+  .swot-card.o h4 { color: #60a5fa; }
+  .swot-card.t h4 { color: var(--warn); }
+  .swot-card ul { padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .swot-card li { font-size: 13px; color: var(--text); padding-left: 14px; position: relative; }
+  .swot-card li::before { content: '•'; position: absolute; left: 0; color: var(--muted); }
+
+  /* Timeline */
+  .timeline { position: relative; padding: 0 0 0 28px; margin: 16px 0 24px; }
+  .timeline::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .timeline-item { position: relative; margin-bottom: 20px; }
+  .timeline-item::before { content: ''; position: absolute; left: -24px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); }
+  .timeline-item .t-date { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+  .timeline-item .t-text { font-size: 13.5px; color: var(--text); margin-top: 3px; }
+
+  /* Section divider */
+  .section-rule { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+  /* Role analysis */
+  .role-card { background: linear-gradient(135deg, rgba(108,125,232,0.08), rgba(155,142,255,0.05)); border: 1px solid rgba(108,125,232,0.3); border-radius: 12px; padding: 28px 32px; margin: 24px 0; }
+  .role-card .role-title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .role-card .role-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .role-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .role-pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: rgba(108,125,232,0.15); color: var(--accent); border: 1px solid rgba(108,125,232,0.25); }
+
+  /* Competitor cards */
+  .competitor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin: 16px 0 24px; }
+  .comp-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .comp-card .comp-name { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .comp-card .comp-type { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+  .comp-card .comp-row { display: flex; justify-content: space-between; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid rgba(46,51,72,0.5); }
+  .comp-card .comp-row:last-child { border-bottom: none; }
+  .comp-row .k { color: var(--muted); }
+  .comp-row .v { color: var(--text); font-weight: 500; text-align: right; max-width: 60%; }
+  .threat-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-top: 10px; }
+  .threat-critical { background: rgba(248,113,113,0.15); color: var(--red); }
+  .threat-high { background: rgba(251,191,36,0.15); color: var(--yellow); }
+  .threat-medium { background: rgba(108,125,232,0.15); color: var(--accent); }
+
+  /* Financial scorecard */
+  .scorecard { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin: 16px 0 24px; }
+  .score-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .score-item .s-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+  .score-item .s-value { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+  .score-item .s-note { font-size: 11.5px; color: var(--muted); }
+
+  /* Quote callout */
+  .quote { border-left: 3px solid var(--accent); padding: 14px 20px; margin: 20px 0; background: rgba(108,125,232,0.05); border-radius: 0 8px 8px 0; }
+  .quote p { margin: 0; font-size: 14px; color: var(--text); font-style: italic; }
+  .quote .attribution { font-size: 12px; color: var(--muted); margin-top: 8px; font-style: normal; }
+
+  /* Day plan */
+  .day-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 16px 0 24px; }
+  .day-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .day-card .day-label { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .day-card .day-goal { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+  .day-card ul { list-style: none; padding: 0; }
+  .day-card li { font-size: 12.5px; color: var(--muted); padding: 5px 0 5px 14px; position: relative; border-bottom: 1px solid rgba(46,51,72,0.4); }
+  .day-card li:last-child { border-bottom: none; }
+  .day-card li::before { content: '→'; position: absolute; left: 0; color: var(--accent); font-size: 11px; }
+
+  /* Gap flags */
+  .gap-card { display: flex; gap: 12px; background: rgba(251,191,36,0.05); border: 1px solid rgba(251,191,36,0.25); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+  .gap-icon { font-size: 18px; flex-shrink: 0; }
+  .gap-text { font-size: 13.5px; color: var(--text); }
+  .gap-text strong { color: var(--yellow); }
+
+  /* Scroll behavior */
+  html { scroll-behavior: smooth; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 28px 24px 60px; }
+    .swot { grid-template-columns: 1fr; }
+    .day-grid { grid-template-columns: 1fr; }
+    .exec-brief .glance-grid { grid-template-columns: 1fr; }
+    .competitor-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR NAV -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">Glean Intelligence Brief</div>
+    <div class="logo-sub">Prepared: May 2026</div>
+  </div>
+  <div class="nav-section">Overview</div>
+  <a class="nav-item" href="#exec">Executive Brief</a>
+  <a class="nav-item" href="#scorecard">Key Metrics</a>
+  <div class="nav-section">Six Domains</div>
+  <a class="nav-item" href="#d1">01 · Industry Landscape</a>
+  <a class="nav-item" href="#d2">02 · Company Profile</a>
+  <a class="nav-item" href="#d3">03 · Org & Key People</a>
+  <a class="nav-item" href="#d4">04 · Business Model</a>
+  <a class="nav-item" href="#d5">05 · Strategic Posture</a>
+  <a class="nav-item" href="#d6">06 · Engagement Ready</a>
+  <div class="nav-section">Analysis</div>
+  <a class="nav-item" href="#role">AIOM Role Deep-Dive</a>
+  <a class="nav-item" href="#competitors">Competitor Analysis</a>
+  <a class="nav-item" href="#gaps">Knowledge Gaps</a>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+<!-- REPORT HEADER -->
+<div class="report-header">
+  <div class="badge">CLIENT INTELLIGENCE BRIEF · CONFIDENTIAL</div>
+  <h1>Glean Technologies</h1>
+  <div class="subtitle">Full-spectrum readiness brief for the Manager, AI Outcomes engagement</div>
+  <div class="report-meta">
+    <div class="meta-item"><div class="meta-dot"></div>Prepared: May 2026</div>
+    <div class="meta-item"><div class="meta-dot"></div>Industry: Enterprise Work AI</div>
+    <div class="meta-item"><div class="meta-dot"></div>Stage: Late-stage Private · Pre-IPO</div>
+    <div class="meta-item"><div class="meta-dot"></div>Focus: AIOM Role · Platform · Competitive Landscape</div>
+  </div>
+</div>
+
+<!-- EXEC BRIEF -->
+<section id="exec">
+<div class="exec-brief">
+  <h2>⚡ Executive Brief — 5-Minute Read</h2>
+  <div class="glance-grid">
+    <div class="glance-item">
+      <div class="label">ARR (Feb 2026)</div>
+      <div class="value">$250M+ · 150%+ YoY</div>
+    </div>
+    <div class="glance-item">
+      <div class="label">Valuation</div>
+      <div class="value">$7.2B (Series F, Jun 2025)</div>
+    </div>
+    <div class="glance-item">
+      <div class="label">Total Raised</div>
+      <div class="value">~$784M</div>
+    </div>
+    <div class="glance-item">
+      <div class="label">Employees</div>
+      <div class="value">1,000+ · 25+ countries</div>
+    </div>
+    <div class="glance-item">
+      <div class="label">Connectors</div>
+      <div class="value">100+ SaaS apps</div>
+    </div>
+    <div class="glance-item">
+      <div class="label">IPO Signal</div>
+      <div class="value">~65% probability before mid-2027</div>
+    </div>
+  </div>
+
+  <h3 style="color: var(--accent3); font-size: 15px; margin-bottom: 12px;">🎯 Top 5 Things to Know Before Walking In</h3>
+  <div class="takeaway-list">
+    <div class="takeaway">
+      <div class="takeaway-num">1</div>
+      <div class="takeaway-text"><strong>This is a transformation role, not a CS role.</strong> The Manager, AI Outcomes leads Glean's internal consulting practice — converting licensed access into enterprise behavioral change and measurable ROI. The title undersells the strategic scope.</div>
+    </div>
+    <div class="takeaway">
+      <div class="takeaway-num">2</div>
+      <div class="takeaway-text"><strong>Glean's growth is exceptional but its adoption depth is the existential challenge.</strong> 25% reported year-one churn + inconsistent AI accuracy = the exact problem AIOMs are hired to solve. Own this, don't avoid it.</div>
+    </div>
+    <div class="takeaway">
+      <div class="takeaway-num">3</div>
+      <div class="takeaway-text"><strong>The competitive moat is real but Microsoft is the one variable that can undo it.</strong> Glean's Enterprise Graph is genuinely differentiated; Copilot's improving cross-ecosystem retrieval is the single most important risk to monitor.</div>
+    </div>
+    <div class="takeaway">
+      <div class="takeaway-num">4</div>
+      <div class="takeaway-text"><strong>An IPO is the unstated forcing function.</strong> Every process being built now — including AIOM playbooks and NRR metrics — will face public market scrutiny by mid-2027. The AIOM manager is building infrastructure for that reality.</div>
+    </div>
+    <div class="takeaway">
+      <div class="takeaway-num">5</div>
+      <div class="takeaway-text"><strong>Gartner says 40%+ of agentic AI initiatives will be abandoned by 2027.</strong> Glean's AIOM team exists to make sure their customers are not in that 40%. This is the most compelling external frame for the role's purpose.</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- SCORECARD -->
+<section id="scorecard">
+<h3>Financial Snapshot</h3>
+<div class="scorecard">
+  <div class="score-item">
+    <div class="s-label">ARR</div>
+    <div class="s-value">$250M+</div>
+    <div class="s-note">150%+ YoY growth · Feb 2026</div>
+  </div>
+  <div class="score-item">
+    <div class="s-label">Valuation</div>
+    <div class="s-value">$7.2B</div>
+    <div class="s-note">Series F · Jun 2025</div>
+  </div>
+  <div class="score-item">
+    <div class="s-label">G2 Rating</div>
+    <div class="s-value">4.8/5</div>
+    <div class="s-note">130+ enterprise reviews</div>
+  </div>
+  <div class="score-item">
+    <div class="s-label">DAU/MAU</div>
+    <div class="s-value">~40%</div>
+    <div class="s-note">Industry avg: 10–20%</div>
+  </div>
+  <div class="score-item">
+    <div class="s-label">Connectors</div>
+    <div class="s-value">100+</div>
+    <div class="s-note">SaaS app integrations</div>
+  </div>
+  <div class="score-item">
+    <div class="s-label">Est. Year-1 Churn</div>
+    <div class="s-value">~25%</div>
+    <div class="s-note">Independent reports · Not confirmed by Glean</div>
+  </div>
+</div>
+</section>
+
+<hr class="section-rule">
+
+<!-- DOMAIN 1 -->
+<section id="d1">
+<div class="domain-header">
+  <div class="domain-num">01</div>
+  <div>
+    <h2>Industry & Market Landscape</h2>
+    <div class="domain-tag">Enterprise AI Search · Work AI Platforms · Knowledge Management</div>
+  </div>
+</div>
+
+<p>Glean operates at the intersection of three converging markets: enterprise search, knowledge management, and agentic Work AI platforms. The broader enterprise AI market is growing at a 44% CAGR, projected from $21B in 2025 to $561B by 2034, while the enterprise search segment specifically is projected to reach $17–26B by 2032. The market is in early-to-growth phase: post-LLM inflection point acceleration, consolidating around a few strategic positions.</p>
+
+<h3>Market Size at a Glance</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Segment</th><th>2025 Value</th><th>Projected Value</th><th>CAGR</th></tr></thead>
+<tbody>
+<tr><td><strong>Enterprise Search</strong></td><td>$6.17B</td><td>$25.89B (2035)</td><td>12.5%</td></tr>
+<tr><td><strong>AI Enterprise Search</strong></td><td>$5.9B</td><td>$17.3B (2032)</td><td>16.7%</td></tr>
+<tr><td><strong>Enterprise AI (Broad)</strong></td><td>$20.93B</td><td>$560.74B (2034)</td><td>44.1%</td></tr>
+<tr><td><strong>Agentic AI Market</strong></td><td>~$8.5B</td><td>~$45B (2030)</td><td>~35%</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Porter's Five Forces</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Force</th><th>Intensity</th><th>Key Driver</th></tr></thead>
+<tbody>
+<tr><td><strong>Competitive Rivalry</strong></td><td><span class="pill pill-red">HIGH</span></td><td>Microsoft Copilot (150M+ seats), ServiceNow/Moveworks, Google. Microsoft's 2024 search/Copilot revenue: $14B.</td></tr>
+<tr><td><strong>Threat of New Entrants</strong></td><td><span class="pill pill-red">HIGH</span></td><td>LLM API accessibility, cloud infra, VC flow into AI startups dramatically reduce barriers</td></tr>
+<tr><td><strong>Threat of Substitutes</strong></td><td><span class="pill pill-yellow">MEDIUM</span></td><td>Manual search (status quo), ChatGPT Enterprise, ecosystem-native tools (Slack AI, Google Workspace AI)</td></tr>
+<tr><td><strong>Buyer Power</strong></td><td><span class="pill pill-yellow">MED-HIGH</span></td><td>Increasing alternatives; enterprises use competitive bids. Long contracts and deep integration create switching friction.</td></tr>
+<tr><td><strong>Supplier Power</strong></td><td><span class="pill pill-yellow">MEDIUM</span></td><td>LLM provider dependence (OpenAI, Anthropic, Google). Vertical integration by SaaS app providers is key risk.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>PESTLE Summary</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Dimension</th><th>Direction</th><th>Implication</th></tr></thead>
+<tbody>
+<tr><td><strong>Political</strong></td><td><span class="pill pill-yellow">Tightening</span></td><td>EU AI Act, US EO on AI — governance features become competitive GTM asset</td></tr>
+<tr><td><strong>Economic</strong></td><td><span class="pill pill-green">Positive</span></td><td>AI budgets expanding; ROI scrutiny increasing. AIOMs must prove value to justify renewal.</td></tr>
+<tr><td><strong>Social</strong></td><td><span class="pill pill-green">Positive</span></td><td>AI-native workforce; change management remains a human challenge — adoption services valued</td></tr>
+<tr><td><strong>Technology</strong></td><td><span class="pill pill-green">Accelerating</span></td><td>LLM capability improving; agentic AI; MCP standardization — model neutrality differentiates</td></tr>
+<tr><td><strong>Legal</strong></td><td><span class="pill pill-red">Risk</span></td><td>Data residency, SOC2, privacy requirements; cloud-only limits regulated verticals</td></tr>
+<tr><td><strong>Environmental</strong></td><td><span class="pill pill-yellow">Emerging</span></td><td>AI compute energy under scrutiny; lower priority now but growing ESG relevance</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<hr class="section-rule">
+
+<!-- DOMAIN 2 -->
+<section id="d2">
+<div class="domain-header">
+  <div class="domain-num">02</div>
+  <div>
+    <h2>Company Profile & Competitive Position</h2>
+    <div class="domain-tag">Identity · Products · Differentiation · Competitive Map</div>
+  </div>
+</div>
+
+<p>Glean was founded in 2019 by four Google/Facebook veterans, launched publicly in 2021, and has evolved from a workplace search tool into a full-scale Work AI platform combining search, a Gen 3 AI assistant, autonomous agents, and a proprietary Enterprise Knowledge Graph. The company's ICP began with fast-growing tech companies (500–2,000 employees) and has expanded to Fortune 500 enterprises across telecom, financial services, healthcare, and retail.</p>
+
+<h3>Product Portfolio</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Product</th><th>Category</th><th>Core Function</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td><strong>Glean Search</strong></td><td>Enterprise Search</td><td>Semantic/hybrid cross-app search with real-time ACL permissions sync</td><td><span class="pill pill-green">GA</span></td></tr>
+<tr><td><strong>Glean Assistant (Gen 3)</strong></td><td>AI Assistant</td><td>Context-aware, agentic assistant; summarizes, creates, executes work</td><td><span class="pill pill-green">GA</span></td></tr>
+<tr><td><strong>Glean Agents</strong></td><td>Agentic AI</td><td>No-code and graph-based agent builder; pre-built agents for 8 sales workflows</td><td><span class="pill pill-yellow">GA + Beta (Autonomous)</span></td></tr>
+<tr><td><strong>Enterprise Graph</strong></td><td>Knowledge Infra</td><td>ML-built graph of entities (people, projects, customers) + relationships</td><td><span class="pill pill-green">GA Sep 2025</span></td></tr>
+<tr><td><strong>Glean Protect Plus</strong></td><td>AI Governance</td><td>Real-time permissions enforcement, AI governance controls</td><td><span class="pill pill-green">GA</span></td></tr>
+<tr><td><strong>Model Hub</strong></td><td>LLM Flexibility</td><td>Access to 35+ LLMs; mix-and-match by use case; model neutrality</td><td><span class="pill pill-green">GA</span></td></tr>
+<tr><td><strong>Enterprise Context</strong></td><td>Platform Layer</td><td>Memory + connectors + indexes + graphs + governance unified</td><td><span class="pill pill-green">Announced Dec 2025</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Product Evolution Timeline</h3>
+<div class="timeline">
+  <div class="timeline-item"><div class="t-date">2019–2021</div><div class="t-text">Stealth development; core enterprise search; Series A ($15M, Kleiner Perkins). ICP: fast-growing tech companies 500–2K employees.</div></div>
+  <div class="timeline-item"><div class="t-date">2022</div><div class="t-text">Unicorn status ($1B valuation); Series C; expanded marketplace and API partnerships.</div></div>
+  <div class="timeline-item"><div class="t-date">2023</div><div class="t-text">Glean Assist (AI chatbot) launches; Expert Detection; In-Context Recommendations; Knowledge Management features. Piyush Prahladka departs.</div></div>
+  <div class="timeline-item"><div class="t-date">Feb 2024</div><div class="t-text">Series D ($203M, $2.2B valuation). Chat + Search APIs launched. No-code Glean Apps released.</div></div>
+  <div class="timeline-item"><div class="t-date">Sep 2024</div><div class="t-text">Series E ($260M, $4.6B valuation). Next-Gen Prompting; Agent capabilities; $100M ARR milestone.</div></div>
+  <div class="timeline-item"><div class="t-date">May 2025</div><div class="t-text">Inaugural Glean:GO conference; 40+ product launches; agent builder; model hub (35+ LLMs).</div></div>
+  <div class="timeline-item"><div class="t-date">Jun 2025</div><div class="t-text">Series F ($150M, $7.2B valuation) led by Wellington Management. $100M+ ARR publicly announced.</div></div>
+  <div class="timeline-item"><div class="t-date">Sep 2025</div><div class="t-text">Enterprise Graph launch (Glean:LIVE Fall '25); Gen 3 Assistant; MCP directory support; Agentic Engine 2.</div></div>
+  <div class="timeline-item"><div class="t-date">Dec 2025</div><div class="t-text">Autonomous agents (beta); expanded Enterprise Context; 8 pre-built Sales agents. Glean:LIVE Winter '25.</div></div>
+  <div class="timeline-item"><div class="t-date">Feb 2026</div><div class="t-text">$250M ARR confirmed. 150%+ YoY growth. 270M+ assistant actions executed in 2025. 20T+ token run-rate.</div></div>
+</div>
+
+<h3>Brand Reputation Signals</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Source</th><th>Recognition</th></tr></thead>
+<tbody>
+<tr><td>G2</td><td>4.8/5 · 130+ reviews · Enterprise AI Search leader</td></tr>
+<tr><td>Gartner Peer Insights</td><td>4.5/5 · Customers' Choice 2024 (Insight Engines)</td></tr>
+<tr><td>Gartner Innovation Guide</td><td>Emerging Leader · AI Knowledge Management Apps (2025)</td></tr>
+<tr><td>Fast Company</td><td>#1 Applied AI company globally (2025 Most Innovative)</td></tr>
+<tr><td>CNBC Disruptor 50</td><td>Two consecutive years</td></tr>
+<tr><td>Forbes AI 50</td><td>Included 2025</td></tr>
+<tr><td>Forrester TEI Study</td><td>110 hours saved/user/year; 6-month ROI recovery</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Known Weaknesses (Unfiltered)</h3>
+<ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+  <li style="padding: 10px 14px; background: rgba(248,113,113,0.06); border-left: 3px solid var(--red); border-radius: 4px; font-size: 13.5px;">❌ Cloud-only SaaS — disqualifies regulated industries requiring on-premise/hybrid deployment</li>
+  <li style="padding: 10px 14px; background: rgba(248,113,113,0.06); border-left: 3px solid var(--red); border-radius: 4px; font-size: 13.5px;">❌ High, opaque pricing (~$50+/user/mo; $60K+ minimum contract) — TCO barrier for mid-market</li>
+  <li style="padding: 10px 14px; background: rgba(248,113,113,0.06); border-left: 3px solid var(--red); border-radius: 4px; font-size: 13.5px;">❌ Occasional AI hallucinations on complex queries; 15–20% error rate on difficult enterprise queries reported</li>
+  <li style="padding: 10px 14px; background: rgba(248,113,113,0.06); border-left: 3px solid var(--red); border-radius: 4px; font-size: 13.5px;">❌ ~25% reported year-one churn (independent reports, not confirmed) — adoption depth problem</li>
+  <li style="padding: 10px 14px; background: rgba(248,113,113,0.06); border-left: 3px solid var(--red); border-radius: 4px; font-size: 13.5px;">❌ Search results can be too broad; limited customization for specialized team needs</li>
+</ul>
+</section>
+
+<hr class="section-rule">
+
+<!-- DOMAIN 3 -->
+<section id="d3">
+<div class="domain-header">
+  <div class="domain-num">03</div>
+  <div>
+    <h2>Organizational Structure & Key People</h2>
+    <div class="domain-tag">Leadership · DMU · Customer Org · Decision Dynamics</div>
+  </div>
+</div>
+
+<h3>Executive Leadership</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Name</th><th>Role</th><th>Background</th><th>Strategic Priority</th></tr></thead>
+<tbody>
+<tr><td><strong>Arvind Jain</strong></td><td>Founder & CEO</td><td>Google Distinguished Eng (2003–2014); Co-founded Rubrik (IPO)</td><td>AI vision, Enterprise Context as moat, IPO readiness</td></tr>
+<tr><td><strong>T.R. Vishwanath</strong></td><td>Co-Founder, CTO</td><td>Facebook principal SWE (2010–2019, News Feed/Ads)</td><td>Connector infrastructure, Enterprise Graph architecture</td></tr>
+<tr><td><strong>Tony Gentilcore</strong></td><td>Co-Founder, Engineering</td><td>Google Chrome Speed Team / web search (2006–2016)</td><td>Product engineering velocity</td></tr>
+<tr><td><strong>Emrecan Dogan</strong></td><td>Head of Product</td><td>Stanford GSB; joined 2023</td><td>Agents, data science, product ops; roadmap prioritization</td></tr>
+<tr><td><strong>Matt "Kix" Kixmoeller</strong></td><td>CMO</td><td>Seasoned tech marketing executive</td><td>Brand, thought leadership, demand gen</td></tr>
+<tr><td><strong>AJ Tenant</strong></td><td>VP Sales + CS</td><td>Slack (scaled to $1B+ ARR); Facebook/Meta</td><td>Revenue motion, multi-threading, NRR; owns both sales and CS</td></tr>
+<tr><td><strong>Lauren Kennedy</strong></td><td>Head of CS</td><td>Former Gainsight</td><td>CSM team, customer lifecycle programs</td></tr>
+<tr><td><strong>Josh Rutberg</strong></td><td>VP, Customer Outcomes</td><td>Joined June 2025</td><td>Scaled AIOM function; pre-IPO outcomes practice</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Customer-Facing Org (Post-Sale)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Role</th><th>Function</th><th>AIOM Interaction</th></tr></thead>
+<tbody>
+<tr><td><strong>Account Executive (AE)</strong></td><td>New logo, renewal ownership</td><td>Hands off at close; AIOM engagement begins at deployment</td></tr>
+<tr><td><strong>Delivery Excellence Manager (DEM)</strong></td><td>Technical deployment: SSO, connectors, go-live</td><td>Parallel track; AIOM begins enablement at go-live handoff</td></tr>
+<tr><td><strong>AI Outcomes Manager (AIOM)</strong></td><td>End-user adoption, training, agent advisory, value realization</td><td>Core role — leads breadth and depth of usage</td></tr>
+<tr><td><strong>Solution Architect (SA)</strong></td><td>Advanced integrations, custom agent architectures</td><td>Co-delivery on complex agentic use cases</td></tr>
+<tr><td><strong>Support</strong></td><td>Break/fix, ticket resolution</td><td>AIOM coordinates escalations; surfaces quality patterns</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Customer Decision-Making Unit</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Typical Title</th><th>Priorities</th><th>Leverage Point</th></tr></thead>
+<tbody>
+<tr><td><strong>Economic Buyer</strong></td><td>CIO, CTO, CISO</td><td>ROI, governance, cost justification</td><td>Budget authority; renewal decision</td></tr>
+<tr><td><strong>Champion</strong></td><td>VP Digital Workplace, IT transformation lead</td><td>Internal adoption, productivity proof, career success</td><td>Day-to-day point of contact</td></tr>
+<tr><td><strong>Influencer</strong></td><td>Dept heads (Eng, Sales, Support, HR)</td><td>Speed, relevance, ease of use</td><td>Adoption rate; informal referral</td></tr>
+<tr><td><strong>Blocker</strong></td><td>CISO, Legal, Procurement</td><td>Data residency, compliance, contracts</td><td>Can delay or kill — engage early</td></tr>
+<tr><td><strong>Technical Eval</strong></td><td>Enterprise Architect, IT Director</td><td>Integration complexity, security posture</td><td>Technical approval gate</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<hr class="section-rule">
+
+<!-- DOMAIN 4 -->
+<section id="d4">
+<div class="domain-header">
+  <div class="domain-num">04</div>
+  <div>
+    <h2>Business Model & Financial Health</h2>
+    <div class="domain-tag">Revenue Model · ARR Trajectory · Growth Signals · Risk Indicators</div>
+  </div>
+</div>
+
+<h3>ARR Growth Trajectory</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Period</th><th>ARR</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Q1 2023</td><td>$10M</td><td>Series A/B era — early enterprise growth</td></tr>
+<tr><td>Q1 2024</td><td>$39M</td><td>4x YoY growth</td></tr>
+<tr><td>Sep 2024</td><td>~$75M est.</td><td>Series E milestone period</td></tr>
+<tr><td>Jun 2025</td><td>&gt;$100M</td><td>Publicly announced at Series F</td></tr>
+<tr><td>Dec 2025</td><td>$200M</td><td>2x in 9 months</td></tr>
+<tr><td>Feb 2026</td><td>$250M+</td><td>150%+ YoY; 270M+ assistant actions</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Financial Health Scorecard</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Indicator</th><th>Status</th><th>Signal</th></tr></thead>
+<tbody>
+<tr><td><strong>ARR Growth Rate</strong></td><td>150%+ YoY</td><td><span class="status status-green">Exceptional</span></td></tr>
+<tr><td><strong>ARR Absolute</strong></td><td>$250M+</td><td><span class="status status-green">Strong — approaching IPO-ready scale</span></td></tr>
+<tr><td><strong>Cash Position</strong></td><td>$550M (Series E) + $150M (Series F)</td><td><span class="status status-green">Well-capitalized</span></td></tr>
+<tr><td><strong>Gross Margin</strong></td><td>~75–80% (inferred SaaS model)</td><td><span class="status status-yellow">Not publicly disclosed</span></td></tr>
+<tr><td><strong>Burn Rate</strong></td><td>Not disclosed</td><td><span class="status status-yellow">Unknown; 1,000+ employees + heavy R&D = likely significant</span></td></tr>
+<tr><td><strong>Churn</strong></td><td>~25% year-one (independent reports)</td><td><span class="status status-red">Risk signal — AIOM function directly counters this</span></td></tr>
+<tr><td><strong>Engagement Rate</strong></td><td>40% DAU/MAU; 5 queries/day avg</td><td><span class="status status-green">2–4x industry benchmark</span></td></tr>
+<tr><td><strong>IPO Readiness</strong></td><td>Pre-IPO, likely mid-2026 to mid-2027</td><td><span class="status status-yellow">Wellington = institutional capital signal</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Business Model</h3>
+<p><strong>Revenue Type:</strong> Annual recurring SaaS subscription (per-user, per-month). Evolving to hybrid: base per-user license + consumption credits (Enterprise Flex model) for advanced agentic AI usage.</p>
+<p><strong>Pricing:</strong> ~$50+/user/month; minimum enterprise contract $60K–$100K/year. Large deployments $200K–$480K fully loaded. Custom pricing for $1M+ contracts (tripled in 2025).</p>
+<p><strong>Consumption Risk:</strong> Enterprise Flex model introduces variable costs. As agentic workloads scale, inference costs rise — creating CFO scrutiny at renewal. This is an emerging commercial risk that the AIOM function must address proactively with ROI documentation.</p>
+
+<h3>Strategic Investors (Beyond Financial Capital)</h3>
+<p>Capital One Ventures, Citi, Databricks Ventures, and Workday Ventures are investors who are also customers or ecosystem partners — a deliberate enterprise distribution strategy. Wellington Management (Series F lead) signals institutional-grade validation and pre-IPO capital readiness.</p>
+</section>
+
+<hr class="section-rule">
+
+<!-- DOMAIN 5 -->
+<section id="d5">
+<div class="domain-header">
+  <div class="domain-num">05</div>
+  <div>
+    <h2>Strategic Posture & Direction</h2>
+    <div class="domain-tag">Vision · SWOT · Competitive Moat · Risk Register · Future Plans</div>
+  </div>
+</div>
+
+<div class="quote">
+  <p>"Enterprise AI is entering its accountability era. In 2025, the industry proved the technology works. In 2026, it gets judged on what actually matters: ROI, reliability, and scale."</p>
+  <div class="attribution">— Arvind Jain, Founder & CEO, Glean · 2026 Predictions Blog</div>
+</div>
+
+<h3>SWOT Analysis</h3>
+<div class="swot">
+  <div class="swot-card s">
+    <h4>Strengths</h4>
+    <ul>
+      <li>Deepest enterprise knowledge graph; 6 years of ML pipeline development</li>
+      <li>Permission-aware retrieval across 100+ apps — not replicable in months</li>
+      <li>Exceptional ARR growth ($10M → $250M in ~3 years)</li>
+      <li>Elite talent density (ex-Google, ex-Facebook founding team)</li>
+      <li>Model neutrality (35+ LLMs) — genuine differentiation vs. locked ecosystems</li>
+      <li>Gartner, G2, Fast Company recognition — strong brand signal</li>
+    </ul>
+  </div>
+  <div class="swot-card w">
+    <h4>Weaknesses</h4>
+    <ul>
+      <li>Cloud-only — disqualifies regulated industry on-premise requirements</li>
+      <li>High TCO and opaque pricing create mid-market friction</li>
+      <li>~25% reported year-one churn signals adoption depth problem</li>
+      <li>AI hallucinations on complex queries undermine trust in high-stakes contexts</li>
+      <li>Limited workflow execution (historically read-heavy; improving with agents)</li>
+    </ul>
+  </div>
+  <div class="swot-card o">
+    <h4>Opportunities</h4>
+    <ul>
+      <li>Gartner: 40%+ agentic AI initiatives abandoned by 2027 — AIOM addresses this directly</li>
+      <li>IPO path validated by Wellington capital; pre-public market opportunity</li>
+      <li>ServiceNow/Moveworks disruption opens accounts mid-cycle</li>
+      <li>APAC financial services: fastest-growing enterprise AI segment</li>
+      <li>Agentic AI ROI leadership as differentiator vs. generic LLM tools</li>
+    </ul>
+  </div>
+  <div class="swot-card t">
+    <h4>Threats</h4>
+    <ul>
+      <li>Microsoft Copilot iterating cross-ecosystem retrieval — highest priority risk</li>
+      <li>Google Gemini for Workspace improving rapidly in Google-centric stacks</li>
+      <li>Consumption cost escalation at renewal as agentic usage grows</li>
+      <li>EU AI Act and US AI regulation compliance burden increasing</li>
+      <li>Talent war with OpenAI, Anthropic, Google for engineering talent</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Competitive Advantage Durability</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Advantage</th><th>Rating (1–5)</th><th>Assessment</th></tr></thead>
+<tbody>
+<tr><td><strong>Enterprise Knowledge Graph</strong></td><td>⭐⭐⭐⭐⭐ 5/5</td><td>Proprietary, compounding with usage; 6 years of ML pipeline; not replicable in months</td></tr>
+<tr><td><strong>Permission-Aware Retrieval (100+ apps)</strong></td><td>⭐⭐⭐⭐ 4/5</td><td>Significant technical lead; Microsoft closing gap within M365 only</td></tr>
+<tr><td><strong>Enterprise AI Brand</strong></td><td>⭐⭐⭐⭐ 4/5</td><td>G2, Gartner, Fast Company recognition; takes years to build</td></tr>
+<tr><td><strong>Model Neutrality / Open Platform</strong></td><td>⭐⭐⭐ 3/5</td><td>Defensible short-term; competitors can add models; value depends on customer priorities</td></tr>
+<tr><td><strong>Switching Costs</strong></td><td>⭐⭐⭐ 3/5</td><td>High once deeply integrated; lower pre-deep agent deployment</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Confirmed Future Plans (2026–2027)</h3>
+<ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+  <li style="padding: 10px 14px; background: rgba(108,125,232,0.06); border-left: 3px solid var(--accent); border-radius: 4px; font-size: 13.5px;">🚀 <strong>Autonomous Agents GA (2026):</strong> Currently in beta (Dec 2025); full GA rollout is the #1 product frontier for 2026</li>
+  <li style="padding: 10px 14px; background: rgba(108,125,232,0.06); border-left: 3px solid var(--accent); border-radius: 4px; font-size: 13.5px;">🧠 <strong>Enterprise Memory:</strong> Context that learns individual and organizational working patterns; next-gen personalization depth</li>
+  <li style="padding: 10px 14px; background: rgba(108,125,232,0.06); border-left: 3px solid var(--accent); border-radius: 4px; font-size: 13.5px;">🌏 <strong>APAC + European Expansion:</strong> Financial services in APAC (fastest-growing AI segment) as primary geographic thrust</li>
+  <li style="padding: 10px 14px; background: rgba(108,125,232,0.06); border-left: 3px solid var(--accent); border-radius: 4px; font-size: 13.5px;">📈 <strong>IPO Preparation:</strong> Wellington capital, NRR metric investment, and AIOM scaling signal pre-IPO readiness; mid-2026 to mid-2027 window</li>
+  <li style="padding: 10px 14px; background: rgba(108,125,232,0.06); border-left: 3px solid var(--accent); border-radius: 4px; font-size: 13.5px;">🔗 <strong>Open Ecosystem Platform:</strong> MCP directory, partner Innovation Lab, third-party agent templates — long-term platform vs. product play</li>
+</ul>
+
+<h3>Strategic Risk Register</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Risk</th><th>Probability</th><th>Impact</th><th>Horizon</th></tr></thead>
+<tbody>
+<tr><td><strong>Microsoft closes cross-ecosystem retrieval gap</strong></td><td><span class="pill pill-red">HIGH</span></td><td><span class="pill pill-red">CRITICAL</span></td><td>12–18 months</td></tr>
+<tr><td><strong>Customer ROI gap drives churn wave</strong></td><td><span class="pill pill-yellow">MEDIUM</span></td><td><span class="pill pill-red">HIGH</span></td><td>6–12 months</td></tr>
+<tr><td><strong>IPO window closes / market downturn</strong></td><td><span class="pill pill-yellow">MEDIUM</span></td><td><span class="pill pill-red">HIGH</span></td><td>12–24 months</td></tr>
+<tr><td><strong>Consumption cost escalation at renewal</strong></td><td><span class="pill pill-red">HIGH</span></td><td><span class="pill pill-yellow">MEDIUM</span></td><td>6–12 months</td></tr>
+<tr><td><strong>Major SaaS vendor restricts API access</strong></td><td><span class="pill pill-green">LOW</span></td><td><span class="pill pill-red">HIGH</span></td><td>18–24 months</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<hr class="section-rule">
+
+<!-- DOMAIN 6 -->
+<section id="d6">
+<div class="domain-header">
+  <div class="domain-num">06</div>
+  <div>
+    <h2>Engagement Context & Consulting Readiness</h2>
+    <div class="domain-tag">Entry Strategy · Stakeholders · Kickoff Questions · Culture</div>
+  </div>
+</div>
+
+<h3>First 30–60–90 Days</h3>
+<div class="day-grid">
+  <div class="day-card">
+    <div class="day-label">Days 1–30</div>
+    <div class="day-goal">Orient, Listen, Assess</div>
+    <ul>
+      <li>1:1s with every AIOM on current team</li>
+      <li>Shadow 3–5 customer engagements across industries</li>
+      <li>Audit existing playbooks (or confirm their absence)</li>
+      <li>Meet DEM, SA, Support leads — understand handoff gaps</li>
+      <li>Deliverable: team capability matrix + adoption pattern map</li>
+    </ul>
+  </div>
+  <div class="day-card">
+    <div class="day-label">Days 31–60</div>
+    <div class="day-goal">Diagnose, Prioritize, Design</div>
+    <ul>
+      <li>Build v1 adoption playbooks by function (eng, sales, support, HR)</li>
+      <li>Design AIOM team metrics dashboard</li>
+      <li>Engage Product with structured field feedback synthesis</li>
+      <li>Identify 2–3 quick-win customer transformation stories</li>
+      <li>Deliverable: playbook draft; AIOM scorecard v1</li>
+    </ul>
+  </div>
+  <div class="day-card">
+    <div class="day-label">Days 61–90</div>
+    <div class="day-goal">Systematize, Scale, Demonstrate</div>
+    <ul>
+      <li>Roll out playbooks to AIOM team</li>
+      <li>Executive sponsor briefings at 5+ priority accounts</li>
+      <li>Publish first AIOM team impact report</li>
+      <li>Define AIOM team OKRs tied to customer ARR + adoption</li>
+      <li>Deliverable: AIOM practice overview for internal all-hands</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Key Kickoff Questions</h3>
+<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+  <div style="background: var(--surface2); border-radius: 8px; padding: 14px 16px; border: 1px solid var(--border); font-size: 13.5px;"><span style="color: var(--accent); font-weight: 700; margin-right: 8px;">Q1</span>What does success for the AIOM function look like in 12 months — what metric movements would make you say "we nailed it"?</div>
+  <div style="background: var(--surface2); border-radius: 8px; padding: 14px 16px; border: 1px solid var(--border); font-size: 13.5px;"><span style="color: var(--accent); font-weight: 700; margin-right: 8px;">Q2</span>Of customers you're most worried about at renewal, what's the common pattern in their AIOM engagement?</div>
+  <div style="background: var(--surface2); border-radius: 8px; padding: 14px 16px; border: 1px solid var(--border); font-size: 13.5px;"><span style="color: var(--accent); font-weight: 700; margin-right: 8px;">Q3</span>How does the AIOM team's work currently feed back into the Product roadmap — is there a structured process, or is it ad hoc?</div>
+  <div style="background: var(--surface2); border-radius: 8px; padding: 14px 16px; border: 1px solid var(--border); font-size: 13.5px;"><span style="color: var(--accent); font-weight: 700; margin-right: 8px;">Q4</span>Are there customer accounts where the AIOM and AE have misaligned incentives? How does that play out?</div>
+  <div style="background: var(--surface2); border-radius: 8px; padding: 14px 16px; border: 1px solid var(--border); font-size: 13.5px;"><span style="color: var(--accent); font-weight: 700; margin-right: 8px;">Q5</span>Which AIOM on the team is doing it best today — what does good look like, and can it be codified?</div>
+</div>
+
+<h3>Cultural Norms</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Value</th><th>What It Means in Practice</th></tr></thead>
+<tbody>
+<tr><td><strong>Collaborative Tension</strong></td><td>Leaders challenge each other, not defer. Come prepared to be challenged and to challenge. Acceptance of "good enough" is penalized.</td></tr>
+<tr><td><strong>Customer-Driven First</strong></td><td>Every decision connects back to customer outcomes. Internal convenience is never a valid justification for a customer-impacting choice.</td></tr>
+<tr><td><strong>Community Over White-Glove</strong></td><td>Glean replaced 50+ individual customer Slack channels with one community. Scalable, shared approaches are preferred over 1:1 heroics.</td></tr>
+<tr><td><strong>Data-Driven Accountability</strong></td><td>Adoption rates, multi-threading, ROI metrics — everything is measured. Bring numbers to every conversation.</td></tr>
+<tr><td><strong>AI Fluency Required</strong></td><td>The interview process includes an AI-focused exercise. You should be a sophisticated daily user of AI tools, not just an advocate.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<hr class="section-rule">
+
+<!-- ROLE DEEP DIVE -->
+<section id="role">
+<div class="domain-header">
+  <div class="domain-num" style="background: rgba(93,224,199,0.15); border-color: rgba(93,224,199,0.35); color: var(--accent3);">★</div>
+  <div>
+    <h2>Manager, AI Outcomes: Full Role Analysis</h2>
+    <div class="domain-tag">What Glean asked for · What they actually need · Cross-functional map</div>
+  </div>
+</div>
+
+<div class="role-card">
+  <div class="role-title">Manager, AI Outcomes (AIOM)</div>
+  <div class="role-sub">Remote US · Reports to Josh Rutberg, VP Customer Outcomes · OTE $230K–$280K</div>
+  <div class="role-pills">
+    <span class="role-pill">Customer Transformation</span>
+    <span class="role-pill">Team Management</span>
+    <span class="role-pill">Playbook Development</span>
+    <span class="role-pill">AI Advisory</span>
+    <span class="role-pill">Product Feedback Loop</span>
+    <span class="role-pill">Executive Engagement</span>
+  </div>
+  <div class="takeaway-list">
+    <div class="takeaway">
+      <div class="takeaway-num" style="background: var(--accent3);">!</div>
+      <div class="takeaway-text"><strong>What They Asked For:</strong> A leader to manage AIOMs, drive adoption, and codify playbooks.</div>
+    </div>
+    <div class="takeaway">
+      <div class="takeaway-num" style="background: var(--accent3);">!</div>
+      <div class="takeaway-text"><strong>What They Actually Need:</strong> A systems thinker who can make "AI Outcomes" a recognized practice area — scaling Glean's internal consulting capability as rigorously as a product launch.</div>
+    </div>
+    <div class="takeaway">
+      <div class="takeaway-num" style="background: var(--accent3);">!</div>
+      <div class="takeaway-text"><strong>Unstated Desire:</strong> An external thought leader who turns the AIOM function into a Glean brand differentiator — making the outcomes practice a competitive moat alongside the Enterprise Graph.</div>
+    </div>
+  </div>
+</div>
+
+<h3>AIOM Activity Framework</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Activity Type</th><th>Examples</th><th>Business Impact</th></tr></thead>
+<tbody>
+<tr><td><strong>Breadth Enablement</strong></td><td>Company-wide training sessions (search, chat, agents); adoption cadences by function; prompt/agent content; community events</td><td>Activates the license; converts seat count to active usage; drives DAU/MAU</td></tr>
+<tr><td><strong>Depth Advisory</strong></td><td>Executive sponsor ROI briefings; agent building workshops; use case discovery; custom agent co-creation with customers</td><td>Embeds Glean in core workflows; increases switching cost; drives NRR expansion</td></tr>
+<tr><td><strong>Value Realization</strong></td><td>Productivity metrics tracking (hours saved, support deflection); ROI reporting; case study development</td><td>Justifies renewal; creates expandable commercial narrative; feeds investor story</td></tr>
+<tr><td><strong>Product Intelligence</strong></td><td>Field feedback synthesis; use case demand quantification; roadmap influence; cross-functional R&D partnering</td><td>Improves product fit; builds internal credibility; reduces churn from feature gaps</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Working Hypotheses for the Role</h3>
+<div class="gap-card" style="border-color: rgba(93,224,199,0.25); background: rgba(93,224,199,0.04);">
+  <div class="gap-icon">💡</div>
+  <div class="gap-text"><strong style="color: var(--accent3);">Hypothesis 1:</strong> The core problem is adoption depth, not adoption breadth. Licenses are activated but not embedded in daily workflows at the depth needed to produce renewable, expandable revenue. The playbook is too reactive and too end-user focused; it needs an executive layer that ties to business outcomes.</div>
+</div>
+<div class="gap-card" style="border-color: rgba(93,224,199,0.25); background: rgba(93,224,199,0.04);">
+  <div class="gap-icon">💡</div>
+  <div class="gap-text"><strong style="color: var(--accent3);">Hypothesis 2:</strong> The biggest lever is playbook codification. Individual AIOMs vary significantly in approach. Standardizing a prescriptive playbook with function-specific modules will reduce variance and accelerate time-to-value at scale.</div>
+</div>
+<div class="gap-card" style="border-color: rgba(93,224,199,0.25); background: rgba(93,224,199,0.04);">
+  <div class="gap-icon">💡</div>
+  <div class="gap-text"><strong style="color: var(--accent3);">Hypothesis 3:</strong> AJ Tenant (VP Sales + CS) is the most critical stakeholder. Because both sales and CS report to him, the AIOM manager's effectiveness depends entirely on alignment with his commercial priorities. This is the single highest-leverage relationship to invest in first.</div>
+</div>
+</section>
+
+<hr class="section-rule">
+
+<!-- COMPETITOR ANALYSIS -->
+<section id="competitors">
+<div class="domain-header">
+  <div class="domain-num" style="background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.35); color: var(--yellow);">⚔</div>
+  <div>
+    <h2>Competitor Analysis</h2>
+    <div class="domain-tag">ICP · History · Differentiators · Competitive Threat Rating</div>
+  </div>
+</div>
+
+<h3>Full Competitive Positioning Matrix</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Vendor</th><th>Primary Strength</th><th>Connectors</th><th>LLM Flexibility</th><th>On-Prem</th><th>ICP</th><th>Pricing (est.)</th><th>Threat to Glean</th></tr></thead>
+<tbody>
+<tr><td><strong>Glean</strong></td><td>Cross-ecosystem knowledge graph</td><td>100+</td><td>35+ models</td><td>No</td><td>Mid-large enterprise, heterogeneous SaaS</td><td>$50+/user/mo</td><td>—</td></tr>
+<tr><td><strong>Microsoft Copilot</strong></td><td>M365 deep integration; native app overlap</td><td>M365 native</td><td>Azure/Anthropic only</td><td>No</td><td>M365-heavy orgs</td><td>$30/user/mo</td><td><span class="pill pill-red">CRITICAL</span></td></tr>
+<tr><td><strong>ServiceNow + Moveworks</strong></td><td>ITSM depth; workflow automation</td><td>100+ (via platform)</td><td>ServiceNow AI</td><td>No</td><td>ITSM-led, ServiceNow shops</td><td>Platform-bundled</td><td><span class="pill pill-red">HIGH</span></td></tr>
+<tr><td><strong>Coveo</strong></td><td>AI relevance + digital commerce; analytics</td><td>55+</td><td>Multiple</td><td>No</td><td>Retail, CS portals, employee intranets</td><td>Custom</td><td><span class="pill pill-yellow">MEDIUM</span></td></tr>
+<tr><td><strong>Guru</strong></td><td>Verified knowledge base; browser ext</td><td>40+</td><td>Limited</td><td>No</td><td>SMB/mid-market, support teams</td><td>$18/user/mo</td><td><span class="pill pill-yellow">LOW-MED</span></td></tr>
+<tr><td><strong>Sinequa</strong></td><td>Regulated industries; 22+ languages; on-prem</td><td>200+</td><td>Multiple</td><td>Yes</td><td>Life sciences, finance, govt, defense</td><td>Custom</td><td><span class="pill pill-green">LOW (diff. ICP)</span></td></tr>
+<tr><td><strong>Elastic</strong></td><td>Open-source; developer-native; log/SIEM</td><td>Dev-build</td><td>Dev-build</td><td>Yes</td><td>Engineering teams, infrastructure search</td><td>$95/mo+</td><td><span class="pill pill-green">LOW (diff. category)</span></td></tr>
+<tr><td><strong>GoSearch</strong></td><td>Lower TCO; faster deploy; federated search</td><td>High</td><td>Multiple</td><td>No</td><td>Cost-sensitive enterprises; Glean evaluators</td><td>Free tier + per user</td><td><span class="pill pill-yellow">MEDIUM</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="competitor-grid">
+  <div class="comp-card">
+    <div class="comp-name">Microsoft 365 Copilot</div>
+    <div class="comp-type">Ecosystem Giant · Bundled incumbent</div>
+    <div class="comp-row"><span class="k">Founded</span><span class="v">2023 (Copilot launch)</span></div>
+    <div class="comp-row"><span class="k">Distribution</span><span class="v">150M+ seats sold</span></div>
+    <div class="comp-row"><span class="k">ICP</span><span class="v">M365-heavy enterprises</span></div>
+    <div class="comp-row"><span class="k">Daily Active Use</span><span class="v">28–32% (vs. Glean's 40%)</span></div>
+    <div class="comp-row"><span class="k">Key risk for Glean</span><span class="v">Improving cross-ecosystem connectors via Graph</span></div>
+    <span class="threat-badge threat-critical">⚠ Critical Threat</span>
+  </div>
+  <div class="comp-card">
+    <div class="comp-name">ServiceNow + Moveworks</div>
+    <div class="comp-type">ITSM Incumbent · $2.85B acquisition (Dec 2025)</div>
+    <div class="comp-row"><span class="k">Moveworks Founded</span><span class="v">2016 · $315M raised</span></div>
+    <div class="comp-row"><span class="k">Acquisition Price</span><span class="v">$2.85B (ServiceNow's largest)</span></div>
+    <div class="comp-row"><span class="k">ICP</span><span class="v">ITSM-led, ServiceNow shops</span></div>
+    <div class="comp-row"><span class="k">Glean opportunity</span><span class="v">Acquisition disruption mid-contract</span></div>
+    <div class="comp-row"><span class="k">Post-acquisition risk</span><span class="v">Now a platform renewal, not point solution</span></div>
+    <span class="threat-badge threat-high">⚡ High Threat</span>
+  </div>
+  <div class="comp-card">
+    <div class="comp-name">Coveo</div>
+    <div class="comp-type">Public AI Search · TSX: CVO</div>
+    <div class="comp-row"><span class="k">Founded</span><span class="v">2005 · Quebec, Canada</span></div>
+    <div class="comp-row"><span class="k">Revenue (2023)</span><span class="v">$112M (+30% YoY)</span></div>
+    <div class="comp-row"><span class="k">Customers</span><span class="v">700+ enterprise (Adobe, Salesforce)</span></div>
+    <div class="comp-row"><span class="k">ICP</span><span class="v">Retail, digital commerce, CS portals</span></div>
+    <div class="comp-row"><span class="k">Differentiator</span><span class="v">First to GA enterprise RAG answering</span></div>
+    <span class="threat-badge threat-medium">● Medium Threat</span>
+  </div>
+  <div class="comp-card">
+    <div class="comp-name">Guru</div>
+    <div class="comp-type">Verified Knowledge Management</div>
+    <div class="comp-row"><span class="k">Founded</span><span class="v">2015 · Philadelphia</span></div>
+    <div class="comp-row"><span class="k">G2 Rating</span><span class="v">4.7/5</span></div>
+    <div class="comp-row"><span class="k">ICP</span><span class="v">SMB–mid-market, CS and support teams</span></div>
+    <div class="comp-row"><span class="k">Pricing (2026)</span><span class="v">Usage-based credits model</span></div>
+    <div class="comp-row"><span class="k">Vs. Glean</span><span class="v">Knowledge creation vs. knowledge retrieval</span></div>
+    <span class="threat-badge threat-medium">● Low-Medium Threat</span>
+  </div>
+  <div class="comp-card">
+    <div class="comp-name">Sinequa</div>
+    <div class="comp-type">Regulated Industry Specialist · On-Prem</div>
+    <div class="comp-row"><span class="k">Founded</span><span class="v">2002 · France</span></div>
+    <div class="comp-row"><span class="k">Total Raised</span><span class="v">~$28.3M</span></div>
+    <div class="comp-row"><span class="k">ICP</span><span class="v">Life sciences, finance, govt, defense</span></div>
+    <div class="comp-row"><span class="k">Connectors</span><span class="v">200+</span></div>
+    <div class="comp-row"><span class="k">Key differentiator</span><span class="v">Only major player with on-prem; 22+ languages</span></div>
+    <span class="threat-badge" style="background: rgba(74,222,128,0.1); color: var(--green);">✓ Low Threat (diff. ICP)</span>
+  </div>
+  <div class="comp-card">
+    <div class="comp-name">GoSearch</div>
+    <div class="comp-type">New Pure-Play Challenger</div>
+    <div class="comp-row"><span class="k">Model</span><span class="v">Hybrid federated-first search</span></div>
+    <div class="comp-row"><span class="k">G2 Rating</span><span class="v">4.8/5</span></div>
+    <div class="comp-row"><span class="k">ICP</span><span class="v">Cost-sensitive enterprises; Glean evaluators</span></div>
+    <div class="comp-row"><span class="k">Price vs. Glean</span><span class="v">Lower TCO; free tier available</span></div>
+    <div class="comp-row"><span class="k">Risk</span><span class="v">Positioned as primary Glean alternative in 2026</span></div>
+    <span class="threat-badge threat-medium">● Growing Threat</span>
+  </div>
+</div>
+</section>
+
+<hr class="section-rule">
+
+<!-- KNOWLEDGE GAPS -->
+<section id="gaps">
+<div class="domain-header">
+  <div class="domain-num" style="background: rgba(251,146,60,0.15); border-color: rgba(251,146,60,0.35); color: var(--warn);">?</div>
+  <div>
+    <h2>Knowledge Gaps & Recommended Actions</h2>
+    <div class="domain-tag">What couldn't be confirmed · How to fill gaps · First 48 hours</div>
+  </div>
+</div>
+
+<div class="gap-card">
+  <div class="gap-icon">⚠️</div>
+  <div class="gap-text"><strong>Exact gross margin and burn rate:</strong> Not publicly disclosed. Estimated 75–80% gross margin from SaaS comp analysis. Burn rate is likely significant given 1,000+ employees and heavy R&D investment. Ask directly or triangulate from headcount density by function.</div>
+</div>
+<div class="gap-card">
+  <div class="gap-icon">⚠️</div>
+  <div class="gap-text"><strong>AIOM team current size and structure:</strong> Job postings suggest 10–20 individual contributors, but actual headcount is unconfirmed. This is a Day 1 question — understanding the current team's capability baseline is prerequisite to everything else.</div>
+</div>
+<div class="gap-card">
+  <div class="gap-icon">⚠️</div>
+  <div class="gap-text"><strong>Confirmed churn rate:</strong> The ~25% year-one churn figure comes from independent reports, not Glean-confirmed data. Glean's DAU/MAU and DAU engagement signals are stronger than this number implies. The precise figure requires direct engagement with Josh Rutberg or AJ Tenant.</div>
+</div>
+<div class="gap-card">
+  <div class="gap-icon">⚠️</div>
+  <div class="gap-text"><strong>AIOM performance metrics and existing playbook maturity:</strong> Unknown from public sources. The most critical gap for the incoming Manager. Shadow engagements in first 30 days are the fastest path to ground truth.</div>
+</div>
+<div class="gap-card">
+  <div class="gap-icon">⚠️</div>
+  <div class="gap-text"><strong>Exact vertical revenue mix:</strong> Customer base is expanding beyond tech, but the percentage split across financial services, telecom, healthcare, and retail is not publicly disclosed. Relevant for prioritizing industry-specific playbook development.</div>
+</div>
+
+<h3>Recommended First 48 Hours</h3>
+<ol style="padding-left: 20px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+  <li style="font-size: 13.5px; color: var(--text);">Watch Glean:GO 2025 full recap and Glean:LIVE Winter 2025 recordings — product vision and culture signal are embedded in these</li>
+  <li style="font-size: 13.5px; color: var(--text);">Read Arvind Jain's LinkedIn post from July 2025 on AIOM and the Gartner 40% risk — this is the founding document of the AIOM team's mandate</li>
+  <li style="font-size: 13.5px; color: var(--text);">Read the Forrester TEI study on Glean (on Glean's website) — internalize the 110 hours/user/year and 6-month ROI recovery numbers; you will be asked to defend them</li>
+  <li style="font-size: 13.5px; color: var(--text);">Review three customer case studies (Super.com: 1,500+ hrs/month saved; Zillow; Pure Storage) to understand the range of actual adoption journeys</li>
+  <li style="font-size: 13.5px; color: var(--text);">Explore the Glean App Library and build one agent in the free trial — demonstrate actual AI fluency, not just advocacy, in the first interaction with the team</li>
+</ol>
+</section>
+
+<hr class="section-rule">
+<p style="font-size: 12px; color: var(--muted); text-align: center; margin-top: 40px;">Glean Technologies Client Intelligence Brief · Prepared May 2026 · Dialexa Business Profiler · Sources: Glean press releases, Contrary Research, SaaStr, G2, Gartner, Forrester, LinkedIn, Crunchbase, industry analyst coverage · All unconfirmed inferences are flagged. Not for distribution.</p>
+</div>
+
+<script>
+// Active nav highlighting on scroll
+const sections = document.querySelectorAll('section[id]');
+const navItems = document.querySelectorAll('.nav-item');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('href') === '#' + entry.target.id) {
+          item.classList.add('active');
+        }
+      });
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
