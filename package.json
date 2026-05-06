@@ -1,9 +1,0 @@
-{
-  "name": "business-profiles",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "echo 'Run locally with: npx vercel dev'",
-    "start": "node api/index.js"
-  }
-}
