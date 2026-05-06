@@ -1,5 +1,11 @@
 {
-  "buildCommand": "npm install",
-  "outputDirectory": "public",
-  "devCommand": "node server.js"
+  "buildCommand": "true",
+  "outputDirectory": ".",
+  "devCommand": "npx vercel dev",
+  "functions": {
+    "api/**": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "public": false
 }
