@@ -2,12 +2,8 @@
   "name": "business-profiles",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2"
+    "dev": "echo 'Run locally with: npx vercel dev'",
+    "start": "node api/index.js"
   }
 }
